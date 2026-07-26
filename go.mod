@@ -3,8 +3,11 @@ module github.com/NARUBROWN/spine-simple-chat-demo
 go 1.25.5
 
 require (
-	github.com/NARUBROWN/spine v0.4.2 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/NARUBROWN/spine v0.5.1
+	github.com/gorilla/websocket v1.5.3
+)
+
+require (
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/labstack/echo/v4 v4.15.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect

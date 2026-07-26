@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/NARUBROWN/spine"
@@ -16,12 +17,20 @@ func main() {
 		controller.NewChatController,
 	)
 
-	routes.RegisterChatRoutes(app)
+	if err := routes.RegisterChatRoutes(app); err != nil {
+		log.Fatalf("WebSocket route registration failed: %v", err)
+	}
 
-	app.Run(boot.Options{
+	if err := app.Run(boot.Options{
 		Address:                ":8080",
 		EnableGracefulShutdown: true,
 		ShutdownTimeout:        10 * time.Second,
-		HTTP:                   &boot.HTTPOptions{},
-	})
+		HTTP: &boot.HTTPOptions{
+			WebSocket: boot.WebSocketOptions{
+				MaxConnections: 256,
+			},
+		},
+	}); err != nil {
+		log.Fatalf("Application failed: %v", err)
+	}
 }
