@@ -2,35 +2,44 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"github.com/NARUBROWN/spine"
+	"github.com/NARUBROWN/spine-simple-chat-demo/config"
 	"github.com/NARUBROWN/spine-simple-chat-demo/controller"
+	"github.com/NARUBROWN/spine-simple-chat-demo/interceptor"
 	"github.com/NARUBROWN/spine-simple-chat-demo/routes"
 	"github.com/NARUBROWN/spine/pkg/boot"
 )
 
 func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Configuration failed: %v", err)
+	}
+
 	app := spine.New()
 
 	app.Constructor(
 		controller.NewChatController,
 	)
+	app.InterceptorFor(boot.InterceptorWebSocket, interceptor.NewAuthInterceptor(cfg.AuthToken))
 
 	if err := routes.RegisterChatRoutes(app); err != nil {
 		log.Fatalf("WebSocket route registration failed: %v", err)
 	}
 
-	if err := app.Run(boot.Options{
-		Address:                ":8080",
+	options := boot.Options{
+		Address:                cfg.Address,
 		EnableGracefulShutdown: true,
-		ShutdownTimeout:        10 * time.Second,
+		ShutdownTimeout:        cfg.ShutdownTimeout,
 		HTTP: &boot.HTTPOptions{
-			WebSocket: boot.WebSocketOptions{
-				MaxConnections: 256,
-			},
+			WebSocket: cfg.WebSocket,
 		},
-	}); err != nil {
+	}
+	if err := app.Validate(options); err != nil {
+		log.Fatalf("Application validation failed: %v", err)
+	}
+	if err := app.Run(options); err != nil {
 		log.Fatalf("Application failed: %v", err)
 	}
 }
