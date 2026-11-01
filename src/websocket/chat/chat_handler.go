@@ -1,4 +1,4 @@
-package controller
+package chat
 
 import (
 	"context"
@@ -21,7 +21,7 @@ const (
 
 var identifierPattern = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 
-type ChatController struct {
+type ChatSocket struct {
 	mu      sync.RWMutex
 	clients map[string]client
 }
@@ -32,27 +32,11 @@ type client struct {
 	sender ws.Sender
 }
 
-func NewChatController() *ChatController {
-	return &ChatController{clients: make(map[string]client)}
+func NewChatSocket() *ChatSocket {
+	return &ChatSocket{clients: make(map[string]client)}
 }
 
-type ChatCommand struct {
-	Type    string `json:"type"`
-	Room    string `json:"room,omitempty"`
-	User    string `json:"user,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-type ChatEvent struct {
-	Type    string `json:"type"`
-	Room    string `json:"room,omitempty"`
-	From    string `json:"from,omitempty"`
-	Message string `json:"message,omitempty"`
-	Code    string `json:"code,omitempty"`
-	At      string `json:"at"`
-}
-
-func (c *ChatController) OnMessage(ctx context.Context, connID ws.ConnectionID, command ChatCommand) error {
+func (c *ChatSocket) Handle(ctx context.Context, connID ws.ConnectionID, command ChatMessage) error {
 	sender, ok := ctx.Value(ws.SenderKey).(ws.Sender)
 	if !ok || sender == nil {
 		return errors.New("websocket sender is unavailable")
@@ -70,7 +54,7 @@ func (c *ChatController) OnMessage(ctx context.Context, connID ws.ConnectionID, 
 	}
 }
 
-func (c *ChatController) join(connectionID string, sender ws.Sender, command ChatCommand) error {
+func (c *ChatSocket) join(connectionID string, sender ws.Sender, command ChatMessage) error {
 	room := strings.TrimSpace(command.Room)
 	user := strings.TrimSpace(command.User)
 	if !validIdentifier(room, maxRoomLength) {
@@ -98,7 +82,7 @@ func (c *ChatController) join(connectionID string, sender ws.Sender, command Cha
 	return c.broadcast(recipients, ChatEvent{Type: "joined", Room: room, From: user, At: now()})
 }
 
-func (c *ChatController) message(connectionID string, sender ws.Sender, message string) error {
+func (c *ChatSocket) message(connectionID string, sender ws.Sender, message string) error {
 	trimmed := strings.TrimSpace(message)
 	if trimmed == "" || len([]rune(trimmed)) > maxMessageLength {
 		return sendError(sender, "INVALID_MESSAGE", "message must contain 1-1000 characters")
@@ -118,7 +102,7 @@ func (c *ChatController) message(connectionID string, sender ws.Sender, message 
 	})
 }
 
-func (c *ChatController) leave(connectionID string, sender ws.Sender) error {
+func (c *ChatSocket) leave(connectionID string, sender ws.Sender) error {
 	c.mu.Lock()
 	joined, exists := c.clients[connectionID]
 	if !exists {
@@ -137,7 +121,7 @@ func (c *ChatController) leave(connectionID string, sender ws.Sender) error {
 	return c.broadcast(recipients, event)
 }
 
-func (c *ChatController) roomSnapshotLocked(room string) map[string]client {
+func (c *ChatSocket) roomSnapshotLocked(room string) map[string]client {
 	recipients := make(map[string]client)
 	for id, joined := range c.clients {
 		if joined.room == room {
@@ -147,7 +131,7 @@ func (c *ChatController) roomSnapshotLocked(room string) map[string]client {
 	return recipients
 }
 
-func (c *ChatController) broadcast(recipients map[string]client, event ChatEvent) error {
+func (c *ChatSocket) broadcast(recipients map[string]client, event ChatEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err

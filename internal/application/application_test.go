@@ -1,6 +1,11 @@
 package application
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+
+	"github.com/NARUBROWN/spine-simple-chat-demo/src/websocket/chat"
+)
 
 func TestBuildApplicationValidatesAndRegistersChat(t *testing.T) {
 	app, options, err := BuildApplication()
@@ -11,7 +16,13 @@ func TestBuildApplicationValidatesAndRegistersChat(t *testing.T) {
 		t.Fatal(err)
 	}
 	registrations := app.WebSocket().Registrations()
-	if len(registrations) != 1 || registrations[0].Path != "/ws/chat" {
-		t.Fatalf("chat registrations: %#v", registrations)
+	for _, registration := range registrations {
+		if registration.Path == "/ws/chat" {
+			if registration.Meta.ControllerType != reflect.TypeFor[*chat.ChatSocket]() || registration.Meta.Method.Name != "Handle" {
+				t.Fatalf("chat handler: %#v", registration.Meta)
+			}
+			return
+		}
 	}
+	t.Fatalf("/ws/chat registration is missing: %#v", registrations)
 }

@@ -2,10 +2,9 @@ package application
 
 import (
 	"github.com/NARUBROWN/spine"
-	"github.com/NARUBROWN/spine-simple-chat-demo/config"
-	"github.com/NARUBROWN/spine-simple-chat-demo/controller"
-	"github.com/NARUBROWN/spine-simple-chat-demo/interceptor"
-	"github.com/NARUBROWN/spine-simple-chat-demo/routes"
+	"github.com/NARUBROWN/spine-simple-chat-demo/internal/config"
+	"github.com/NARUBROWN/spine-simple-chat-demo/internal/interceptor"
+	"github.com/NARUBROWN/spine-simple-chat-demo/src/websocket/chat"
 	"github.com/NARUBROWN/spine/pkg/boot"
 )
 
@@ -16,9 +15,8 @@ func BuildApplication() (spine.App, boot.Options, error) {
 	if err != nil {
 		return nil, boot.Options{}, err
 	}
-	app.Constructor(controller.NewChatController)
 	app.InterceptorFor(boot.InterceptorWebSocket, interceptor.NewAuthInterceptor(cfg.AuthToken))
-	if err := routes.Register(app); err != nil {
+	if err := chat.Register(app); err != nil {
 		return nil, boot.Options{}, err
 	}
 	return app, boot.Options{

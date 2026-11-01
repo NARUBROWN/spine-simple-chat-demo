@@ -1,9 +1,9 @@
 # spine-simple-chat-demo
 
-Spine `v0.5.1`로 인증된 WebSocket 채팅을 구현하는 예제입니다. 명시적인 `join/message/leave` 프로토콜, 방별 브로드캐스트, handshake 인증, 연결·메시지 크기·timeout 제한과 graceful shutdown을 함께 보여줍니다.
+Spine `v0.5.1`로 인증된 WebSocket 채팅을 구현하는 예제입니다. 명시적인 `join/message/leave` 프로토콜, 방별 브로드캐스트, handshake 인증, 연결, 메시지 크기, timeout 제한과 graceful shutdown을 함께 보여줍니다.
 
 **[Spine CLI](https://github.com/NARUBROWN/spine-cli)로 빌드하고 검증한 예제입니다.**
-Spine CLI는 개발 서버 실행과 코드 변경 감지·자동 재빌드부터 실행 계약 검사와 구성 요소 생성까지 지원합니다.
+Spine CLI는 개발 서버 실행과 코드 변경 감지, 자동 재빌드부터 실행 계약 검사와 구성 요소 생성까지 지원합니다.
 이 채팅 예제를 확장하거나 새 백엔드를 만들고 싶다면 [Spine CLI의 명령과 사용 예제](https://github.com/NARUBROWN/spine-cli#readme)를 확인하세요.
 
 ## Spine CLI로 실행하기
@@ -20,7 +20,7 @@ spine dev
 
 ```bash
 spine build   # 실행 파일 빌드
-spine verify  # 실행 계약·포맷·vet·테스트 검사
+spine verify  # 실행 계약, 포맷, vet, 테스트 검사
 ```
 
 CLI 설치와 전체 사용법은 [공식 CLI 저장소](https://github.com/NARUBROWN/spine-cli#readme)를 참고하세요.
@@ -92,7 +92,7 @@ wscat -c 'ws://localhost:8080/ws/chat?token=demo-token' \
 | `CHAT_MAX_MESSAGE_BYTES` | `4096` | WebSocket frame 읽기 제한 |
 | `CHAT_HANDSHAKE_TIMEOUT` | `5s` | handshake 쓰기 제한 시간 |
 | `CHAT_READ_TIMEOUT` | `60s` | 메시지 또는 pong 대기 시간 |
-| `CHAT_WRITE_TIMEOUT` | `5s` | 메시지·제어 frame 쓰기 시간 |
+| `CHAT_WRITE_TIMEOUT` | `5s` | 메시지, 제어 frame 쓰기 시간 |
 | `CHAT_PING_INTERVAL` | `25s` | 서버 ping 간격 |
 | `CHAT_SHUTDOWN_TIMEOUT` | `10s` | graceful shutdown 제한 시간 |
 
@@ -110,7 +110,7 @@ Spine에는 현재 애플리케이션 수준의 `OnConnect`/`OnDisconnect` 콜�
 
 ## 테스트
 
-CLI 계약 검사와 부분 runtime probe, 단위·race·정적 검사를 실행합니다.
+CLI 계약 검사와 부분 runtime probe, 단위, race, 정적 검사를 실행합니다.
 
 ```bash
 spine context --root . --json
@@ -147,19 +147,41 @@ go test -tags=e2e -v ./e2e
 
 ```text
 .
-├── spine.toml                 # CLI 실행 위치·구성 패키지·포트
+├── spine.toml                 # CLI 실행 위치, 구성 패키지, 포트
 ├── internal/application/      # BuildApplication과 구성 검증 테스트
-├── config/                    # 환경변수와 안전 제한 설정
-├── controller/                # 방 상태와 채팅 프로토콜
-├── interceptor/               # upgrade 전 토큰 인증
-├── routes/                    # WebSocket route 등록
+├── internal/config/           # 환경변수와 안전 제한 설정
+├── internal/interceptor/      # upgrade 전 토큰 인증
+├── src/websocket/chat/        # spine g websocket chat의 메시지 모듈
+│   ├── module.go              # Register: 생성자와 /ws/chat 수신 계약
+│   ├── chat_handler.go        # ChatSocket: 방 상태와 채팅 프로토콜
+│   ├── chat_message.go        # ChatMessage와 ChatEvent
+│   └── chat_handler_test.go
 ├── e2e/                       # 실제 listener 재사용 E2E
 └── main.go                    # BuildApplication 호출, 검증과 실행
 ```
 
 
-기존 main.go의 DI·인터셉터·라우트·옵션 구성을 internal/application/application.go로 옮겼습니다.
-도메인 패키지 위치는 유지했으며 routes.Register를 CLI와 앱이 함께 사용합니다.
+`spine g websocket chat --path /ws/chat --field type:string --field room:string --field user:string --field message:string --no-register`로
+생성한 모듈에 기존 채팅 구현을 옮겼습니다. `chat.Register(app)`가 생성자와 WebSocket 수신 계약을
+등록하며, `BuildApplication`은 설정과 공통 인터셉터를 구성하고 이 모듈을 연결합니다.
+
+| 이전 위치와 이름 | 현재 위치와 이름 |
+| --- | --- |
+| `controller/chat_controller.go`, `ChatController.OnMessage` | `src/websocket/chat/chat_handler.go`, `ChatSocket.Handle` |
+| 컨트롤러 안의 `ChatCommand`, `ChatEvent` | `src/websocket/chat/chat_message.go`의 `ChatMessage`, `ChatEvent` |
+| `routes/chat_routes.go` | `src/websocket/chat/module.go` |
+| `config/`, `interceptor/` | `internal/config/`, `internal/interceptor/` |
+
+Go 타입 이름과 파일 위치를 바꿨으며, `/ws/chat` 주소와 JSON 메시지 형식은 같습니다.
+새 WebSocket 모듈도 같은 규칙으로 추가할 수 있습니다.
+
+```sh
+spine g websocket notice --path /ws/notice --field message:string --dry-run --json
+```
+
+생성 계획을 확인한 뒤 출력된 `base_hash`를 `--if-match`로 전달하면 `src/websocket/notice/`를
+생성하고 `BuildApplication`에 등록합니다. 생성된 핸들러의 메시지 처리 로직은 직접 구현합니다.
+
 BuildApplication은 리스너를 열지 않습니다. CHAT_ADDRESS를 생략하면 CLI가 전달하는 SPINE_PORT를
 사용하고, 둘 다 없으면 :8080으로 실행합니다. 부분 probe는 공개 WebSocket registry와 app.Validate를
-대조하며, 인증·출처·실제 메시지 처리는 listener E2E에서 별도로 검증합니다.
+대조하며, 인증, 출처, 실제 메시지 처리는 listener E2E에서 별도로 검증합니다.

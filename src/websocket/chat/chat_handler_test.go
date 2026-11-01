@@ -1,4 +1,4 @@
-package controller
+package chat
 
 import (
 	"context"
@@ -35,16 +35,16 @@ func (s *recordingSender) last(t *testing.T) ChatEvent {
 	return s.events[len(s.events)-1]
 }
 
-func TestChatControllerRoomProtocol(t *testing.T) {
-	controller := NewChatController()
+func TestChatSocketRoomProtocol(t *testing.T) {
+	controller := NewChatSocket()
 	alice := &recordingSender{}
 	bob := &recordingSender{}
 	other := &recordingSender{}
 
-	sendCommand(t, controller, "alice-connection", alice, ChatCommand{Type: "join", Room: "general", User: "alice"})
-	sendCommand(t, controller, "bob-connection", bob, ChatCommand{Type: "join", Room: "general", User: "bob"})
-	sendCommand(t, controller, "other-connection", other, ChatCommand{Type: "join", Room: "other", User: "carol"})
-	sendCommand(t, controller, "alice-connection", alice, ChatCommand{Type: "message", Message: " hello "})
+	sendCommand(t, controller, "alice-connection", alice, ChatMessage{Type: "join", Room: "general", User: "alice"})
+	sendCommand(t, controller, "bob-connection", bob, ChatMessage{Type: "join", Room: "general", User: "bob"})
+	sendCommand(t, controller, "other-connection", other, ChatMessage{Type: "join", Room: "other", User: "carol"})
+	sendCommand(t, controller, "alice-connection", alice, ChatMessage{Type: "message", Message: " hello "})
 
 	if event := alice.last(t); event.Type != "message" || event.Room != "general" || event.From != "alice" || event.Message != "hello" {
 		t.Fatalf("발신자 이벤트가 올바르지 않습니다: %#v", event)
@@ -56,7 +56,7 @@ func TestChatControllerRoomProtocol(t *testing.T) {
 		t.Fatalf("다른 방으로 메시지가 전파되었습니다: %#v", event)
 	}
 
-	sendCommand(t, controller, "bob-connection", bob, ChatCommand{Type: "leave"})
+	sendCommand(t, controller, "bob-connection", bob, ChatMessage{Type: "leave"})
 	if event := bob.last(t); event.Type != "left" || event.From != "bob" {
 		t.Fatalf("퇴장 확인 이벤트가 올바르지 않습니다: %#v", event)
 	}
@@ -65,29 +65,29 @@ func TestChatControllerRoomProtocol(t *testing.T) {
 	}
 }
 
-func TestChatControllerRejectsInvalidState(t *testing.T) {
-	controller := NewChatController()
+func TestChatSocketRejectsInvalidState(t *testing.T) {
+	controller := NewChatSocket()
 	first := &recordingSender{}
 	second := &recordingSender{}
 
-	sendCommand(t, controller, "first", first, ChatCommand{Type: "message", Message: "early"})
+	sendCommand(t, controller, "first", first, ChatMessage{Type: "message", Message: "early"})
 	assertCode(t, first.last(t), "NOT_JOINED")
 
-	sendCommand(t, controller, "first", first, ChatCommand{Type: "join", Room: "general", User: "alice"})
-	sendCommand(t, controller, "first", first, ChatCommand{Type: "join", Room: "other", User: "alice"})
+	sendCommand(t, controller, "first", first, ChatMessage{Type: "join", Room: "general", User: "alice"})
+	sendCommand(t, controller, "first", first, ChatMessage{Type: "join", Room: "other", User: "alice"})
 	assertCode(t, first.last(t), "ALREADY_JOINED")
 
-	sendCommand(t, controller, "second", second, ChatCommand{Type: "join", Room: "general", User: "alice"})
+	sendCommand(t, controller, "second", second, ChatMessage{Type: "join", Room: "general", User: "alice"})
 	assertCode(t, second.last(t), "USER_ALREADY_EXISTS")
 
-	sendCommand(t, controller, "second", second, ChatCommand{Type: "join", Room: "bad room", User: "bob"})
+	sendCommand(t, controller, "second", second, ChatMessage{Type: "join", Room: "bad room", User: "bob"})
 	assertCode(t, second.last(t), "INVALID_ROOM")
 }
 
-func sendCommand(t *testing.T, controller *ChatController, connectionID string, sender ws.Sender, command ChatCommand) {
+func sendCommand(t *testing.T, controller *ChatSocket, connectionID string, sender ws.Sender, command ChatMessage) {
 	t.Helper()
 	ctx := context.WithValue(context.Background(), ws.SenderKey, sender)
-	if err := controller.OnMessage(ctx, ws.ConnectionID{Value: connectionID}, command); err != nil {
+	if err := controller.Handle(ctx, ws.ConnectionID{Value: connectionID}, command); err != nil {
 		t.Fatalf("명령 처리 실패: %v", err)
 	}
 }
