@@ -7,7 +7,7 @@ import (
 
 func TestLoadDefaults(t *testing.T) {
 	for _, name := range []string{
-		"CHAT_ADDRESS", "CHAT_AUTH_TOKEN", "CHAT_ALLOWED_ORIGINS", "CHAT_MAX_CONNECTIONS",
+		"CHAT_ADDRESS", "SPINE_PORT", "CHAT_AUTH_TOKEN", "CHAT_ALLOWED_ORIGINS", "CHAT_MAX_CONNECTIONS",
 		"CHAT_MAX_MESSAGE_BYTES", "CHAT_HANDSHAKE_TIMEOUT", "CHAT_READ_TIMEOUT",
 		"CHAT_WRITE_TIMEOUT", "CHAT_PING_INTERVAL", "CHAT_SHUTDOWN_TIMEOUT",
 	} {
@@ -25,6 +25,20 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if config.WebSocket.ReadTimeout != 60*time.Second || config.WebSocket.PingInterval != 25*time.Second {
 		t.Fatalf("기본 timeout 설정이 올바르지 않습니다: %#v", config.WebSocket)
+	}
+}
+
+func TestLoadAddressUsesCLIThenExplicitOverride(t *testing.T) {
+	t.Setenv("CHAT_ADDRESS", "")
+	t.Setenv("SPINE_PORT", "18086")
+	cfg, err := Load()
+	if err != nil || cfg.Address != ":18086" {
+		t.Fatalf("CLI 포트 설정이 반영되지 않았습니다: address=%q error=%v", cfg.Address, err)
+	}
+	t.Setenv("CHAT_ADDRESS", "127.0.0.1:19086")
+	cfg, err = Load()
+	if err != nil || cfg.Address != "127.0.0.1:19086" {
+		t.Fatalf("명시한 주소가 우선하지 않습니다: address=%q error=%v", cfg.Address, err)
 	}
 }
 

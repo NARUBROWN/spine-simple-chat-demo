@@ -2,13 +2,31 @@
 
 Spine `v0.5.1`로 인증된 WebSocket 채팅을 구현하는 예제입니다. 명시적인 `join/message/leave` 프로토콜, 방별 브로드캐스트, handshake 인증, 연결·메시지 크기·timeout 제한과 graceful shutdown을 함께 보여줍니다.
 
-## 실행
+**[Spine CLI](https://github.com/NARUBROWN/spine-cli)로 빌드하고 검증한 예제입니다.**
+Spine CLI는 개발 서버 실행과 코드 변경 감지·자동 재빌드부터 실행 계약 검사와 구성 요소 생성까지 지원합니다.
+이 채팅 예제를 확장하거나 새 백엔드를 만들고 싶다면 [Spine CLI의 명령과 사용 예제](https://github.com/NARUBROWN/spine-cli#readme)를 확인하세요.
+
+## Spine CLI로 실행하기
 
 요구 사항은 Go `1.27.3` 이상입니다. Go 1.27.x 검증 기준은 `1.27.3`입니다.
+Go와 Spine CLI가 설치되어 있다면, 별도 DB나 메시지 브로커 없이 이 저장소 루트에서 바로 실행할 수 있습니다.
 
 ```bash
-go run .
+spine dev
 ```
+
+코드를 수정하면 CLI가 자동으로 다시 빌드하고, 빌드가 성공하면 서버를 새 코드로 교체합니다.
+개발 서버를 실행 중인 터미널과 별도로 다음 명령을 사용할 수 있습니다.
+
+```bash
+spine build   # 실행 파일 빌드
+spine verify  # 실행 계약·포맷·vet·테스트 검사
+```
+
+CLI 설치와 전체 사용법은 [공식 CLI 저장소](https://github.com/NARUBROWN/spine-cli#readme)를 참고하세요.
+이 예제의 계약 검증에는 이번 호환 보완이 포함된 개발 작업본이 필요합니다. 해당 `spine-cli` 소스
+디렉터리에서 `go install ./cmd/spine`으로 설치합니다.
+공개 `v0.1.4` 태그에는 패키지별 consumer/WebSocket 핸들러 분석 보완이 포함되어 있지 않습니다.
 
 기본 주소는 `:8080`, 데모 토큰은 `demo-token`입니다. `wscat`으로 바로 연결할 수 있습니다.
 
@@ -83,7 +101,7 @@ wscat -c 'ws://localhost:8080/ws/chat?token=demo-token' \
 ```bash
 CHAT_AUTH_TOKEN='replace-me' \
 CHAT_ALLOWED_ORIGINS='https://chat.example.com,https://admin.example.com' \
-go run .
+spine dev
 ```
 
 Spine `v0.5.x`의 `App.Validate`가 잘못된 옵션을 listener 시작 전에 검사합니다. 연결 용량을 넘으면 HTTP 503과 `Retry-After`, `WEBSOCKET_CAPACITY_EXCEEDED`가 반환되고, 크기 제한을 넘는 frame은 close code 1009로 종료됩니다. 종료 신호를 받으면 새 연결을 거부하고 활성 handler를 drain한 뒤 WebSocket 런타임을 종료합니다.
@@ -92,9 +110,13 @@ Spine에는 현재 애플리케이션 수준의 `OnConnect`/`OnDisconnect` 콜�
 
 ## 테스트
 
-단위·race·정적 검사를 실행합니다.
+CLI 계약 검사와 부분 runtime probe, 단위·race·정적 검사를 실행합니다.
 
 ```bash
+spine context --root . --json
+spine contract check --root . --warnings-as-errors --json
+spine verify --root . --warnings-as-errors --json
+spine contract probe --root . --json
 go test ./...
 go test -race ./...
 go vet ./...
@@ -104,7 +126,7 @@ go vet ./...
 
 ```bash
 # terminal 1
-go run .
+spine dev
 
 # terminal 2
 go test -tags=e2e -v ./e2e
@@ -125,10 +147,19 @@ go test -tags=e2e -v ./e2e
 
 ```text
 .
+├── spine.toml                 # CLI 실행 위치·구성 패키지·포트
+├── internal/application/      # BuildApplication과 구성 검증 테스트
 ├── config/                    # 환경변수와 안전 제한 설정
 ├── controller/                # 방 상태와 채팅 프로토콜
 ├── interceptor/               # upgrade 전 토큰 인증
 ├── routes/                    # WebSocket route 등록
 ├── e2e/                       # 실제 listener 재사용 E2E
-└── main.go                    # DI, 검증, 실행 및 graceful shutdown
+└── main.go                    # BuildApplication 호출, 검증과 실행
 ```
+
+
+기존 main.go의 DI·인터셉터·라우트·옵션 구성을 internal/application/application.go로 옮겼습니다.
+도메인 패키지 위치는 유지했으며 routes.Register를 CLI와 앱이 함께 사용합니다.
+BuildApplication은 리스너를 열지 않습니다. CHAT_ADDRESS를 생략하면 CLI가 전달하는 SPINE_PORT를
+사용하고, 둘 다 없으면 :8080으로 실행합니다. 부분 probe는 공개 WebSocket registry와 app.Validate를
+대조하며, 인증·출처·실제 메시지 처리는 listener E2E에서 별도로 검증합니다.

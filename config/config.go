@@ -21,7 +21,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	config := Config{
-		Address:         envOrDefault("CHAT_ADDRESS", ":8080"),
+		Address:         envOrDefault("CHAT_ADDRESS", ":"+envOrDefault("SPINE_PORT", "8080")),
 		AuthToken:       envOrDefault("CHAT_AUTH_TOKEN", defaultAuthToken),
 		ShutdownTimeout: 10 * time.Second,
 		WebSocket: boot.WebSocketOptions{
