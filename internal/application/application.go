@@ -2,6 +2,7 @@ package application
 
 import (
 	"github.com/NARUBROWN/spine"
+	platform "github.com/NARUBROWN/spine-echo-platform"
 	"github.com/NARUBROWN/spine-simple-chat-demo/internal/config"
 	"github.com/NARUBROWN/spine-simple-chat-demo/internal/interceptor"
 	"github.com/NARUBROWN/spine-simple-chat-demo/src/websocket/chat"
@@ -10,7 +11,7 @@ import (
 
 // BuildApplication은 서버를 시작하지 않고 실행과 CLI 검증에 필요한 앱을 구성합니다.
 func BuildApplication() (spine.App, boot.Options, error) {
-	app := spine.New()
+	app := platform.New()
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, boot.Options{}, err

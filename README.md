@@ -1,6 +1,6 @@
 # spine-simple-chat-demo
 
-Spine `v0.5.1`로 인증된 WebSocket 채팅을 구현하는 예제입니다. 명시적인 `join/message/leave` 프로토콜, 방별 브로드캐스트, handshake 인증, 연결, 메시지 크기, timeout 제한과 graceful shutdown을 함께 보여줍니다.
+Spine `v0.6.0`로 인증된 WebSocket 채팅을 구현하는 예제입니다. 명시적인 `join/message/leave` 프로토콜, 방별 브로드캐스트, handshake 인증, 연결, 메시지 크기, timeout 제한과 graceful shutdown을 함께 보여줍니다.
 
 **[Spine CLI](https://github.com/NARUBROWN/spine-cli)로 빌드하고 검증한 예제입니다.**
 Spine CLI는 개발 서버 실행과 코드 변경 감지, 자동 재빌드부터 실행 계약 검사와 구성 요소 생성까지 지원합니다.
@@ -8,7 +8,7 @@ Spine CLI는 개발 서버 실행과 코드 변경 감지, 자동 재빌드부�
 
 ## Spine CLI로 실행하기
 
-권장 Go 버전은 `1.27.3`입니다.
+최소 Go 버전은 `1.25.5`이며, 이번 검증에는 `1.26.0`을 사용했습니다.
 Go와 Spine CLI가 설치되어 있다면, 별도 DB나 메시지 브로커 없이 이 저장소 루트에서 바로 실행할 수 있습니다.
 
 ```bash
@@ -23,10 +23,17 @@ spine build   # 실행 파일 빌드
 spine verify  # 실행 계약, 포맷, vet, 테스트 검사
 ```
 
-CLI 설치와 전체 사용법은 [공식 CLI 저장소](https://github.com/NARUBROWN/spine-cli#readme)를 참고하세요.
-이 예제의 계약 검증에는 이번 호환 보완이 포함된 개발 작업본이 필요합니다. 해당 `spine-cli` 소스
-디렉터리에서 `go install ./cmd/spine`으로 설치합니다.
-공개 `v0.1.4` 태그에는 패키지별 consumer/WebSocket 핸들러 분석 보완이 포함되어 있지 않습니다.
+공개 Spine CLI `v0.4.1`로 새 프로젝트를 생성하고 기존 API와 처리 로직을 이식했습니다.
+Go `1.25.5` 이상에서 다음 명령으로 같은 CLI를 설치할 수 있습니다. 이번 검증에는 Go `1.26.0`을 사용했습니다.
+
+```sh
+go install github.com/NARUBROWN/spine-cli/cmd/spine@v0.4.1
+spine version
+# spine-cli 0.4.1
+```
+
+HTTP 앱은 Spine `v0.6.0`, Echo 플랫폼 `v0.1.0`, Echo `v5.4.4`를 사용합니다.
+설치와 전체 명령은 [공식 CLI 저장소](https://github.com/NARUBROWN/spine-cli#readme)를 참고하세요.
 
 기본 주소는 `:8080`, 데모 토큰은 `demo-token`입니다. `wscat`으로 바로 연결할 수 있습니다.
 
@@ -104,7 +111,7 @@ CHAT_ALLOWED_ORIGINS='https://chat.example.com,https://admin.example.com' \
 spine dev
 ```
 
-Spine `v0.5.x`의 `App.Validate`가 잘못된 옵션을 listener 시작 전에 검사합니다. 연결 용량을 넘으면 HTTP 503과 `Retry-After`, `WEBSOCKET_CAPACITY_EXCEEDED`가 반환되고, 크기 제한을 넘는 frame은 close code 1009로 종료됩니다. 종료 신호를 받으면 새 연결을 거부하고 활성 handler를 drain한 뒤 WebSocket 런타임을 종료합니다.
+Spine `v0.6.0`의 `App.Validate`가 잘못된 옵션을 listener 시작 전에 검사합니다. 연결 용량을 넘으면 HTTP 503과 `Retry-After`, `WEBSOCKET_CAPACITY_EXCEEDED`가 반환되고, 크기 제한을 넘는 frame은 close code 1009로 종료됩니다. 종료 신호를 받으면 새 연결을 거부하고 활성 handler를 drain한 뒤 WebSocket 런타임을 종료합니다.
 
 Spine에는 현재 애플리케이션 수준의 `OnConnect`/`OnDisconnect` 콜백이 없습니다. 이 예제는 연결 여부를 추측하지 않고 `join`과 `leave`를 프로토콜로 명시하며, 비정상 종료된 연결은 다음 전송 실패 시 방 상태에서 제거합니다. 따라서 연결 종료를 즉시 영속화해야 하는 시스템은 별도의 presence 저장소와 만료 정책이 필요합니다.
 
@@ -147,7 +154,7 @@ go test -tags=e2e -v ./e2e
 
 ```text
 .
-├── spine.toml                 # CLI 실행 위치, 구성 패키지, 포트
+├── spine.toml                 # layered-v1, Echo 플랫폼, 구성 패키지, 포트
 ├── internal/application/      # BuildApplication과 구성 검증 테스트
 ├── internal/config/           # 환경변수와 안전 제한 설정
 ├── internal/interceptor/      # upgrade 전 토큰 인증
@@ -161,18 +168,12 @@ go test -tags=e2e -v ./e2e
 ```
 
 
-`spine g websocket chat --path /ws/chat --field type:string --field room:string --field user:string --field message:string --no-register`로
+`spine g websocket chat --path /ws/chat --field type:string --field room:string --field user:string --field message:string`로
 생성한 모듈에 기존 채팅 구현을 옮겼습니다. `chat.Register(app)`가 생성자와 WebSocket 수신 계약을
 등록하며, `BuildApplication`은 설정과 공통 인터셉터를 구성하고 이 모듈을 연결합니다.
 
-| 이전 위치와 이름 | 현재 위치와 이름 |
-| --- | --- |
-| `controller/chat_controller.go`, `ChatController.OnMessage` | `src/websocket/chat/chat_handler.go`, `ChatSocket.Handle` |
-| 컨트롤러 안의 `ChatCommand`, `ChatEvent` | `src/websocket/chat/chat_message.go`의 `ChatMessage`, `ChatEvent` |
-| `routes/chat_routes.go` | `src/websocket/chat/module.go` |
-| `config/`, `interceptor/` | `internal/config/`, `internal/interceptor/` |
-
-Go 타입 이름과 파일 위치를 바꿨으며, `/ws/chat` 주소와 JSON 메시지 형식은 같습니다.
+`platform.New()`가 HTTP upgrade용 Echo v5 플랫폼을 선택합니다.
+기존 `/ws/chat` 주소와 JSON 메시지 형식, 인증과 방별 처리 규칙을 유지합니다.
 새 WebSocket 모듈도 같은 규칙으로 추가할 수 있습니다.
 
 ```sh
