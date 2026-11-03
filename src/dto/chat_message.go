@@ -1,4 +1,4 @@
-package chat
+package dto
 
 type ChatMessage struct {
 	Type    string `json:"type"`

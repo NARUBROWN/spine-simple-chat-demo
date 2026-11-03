@@ -1,0 +1,23 @@
+name: Verify chat example
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.0'
+      - run: go install github.com/NARUBROWN/spine-cli/cmd/spine@v0.4.2
+      - run: go mod download
+      - run: spine verify --warnings-as-errors --json
+      - run: spine build
+      - run: spine contract probe --json
+      - run: go test -race -count=1 ./...
+      - run: go test -race -count=1 -tags=e2e -v ./e2e
