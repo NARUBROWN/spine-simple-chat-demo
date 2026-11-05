@@ -1,12 +1,18 @@
 name: Verify chat example
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [preview, rc, main]
+  pull_request:
+    branches: [preview, rc, main]
+    types: [opened, reopened, synchronize, edited, ready_for_review]
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    name: Example Verification / ${{ github.base_ref || github.ref_name }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -14,8 +20,16 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.0'
-      - run: go install github.com/NARUBROWN/spine-cli/cmd/spine@v0.4.2
-      - run: go mod download
+      - name: Check dependency channel
+        id: channel
+        env:
+          TARGET_CHANNEL: ${{ github.base_ref || github.ref_name }}
+        run: python3 scripts/release/example_channels.py --channel "$TARGET_CHANNEL" --github-output "$GITHUB_OUTPUT"
+      - name: Install pinned Spine CLI
+        env:
+          CLI_VERSION: ${{ steps.channel.outputs.cli_version }}
+        run: go install "github.com/NARUBROWN/spine-cli/cmd/spine@$CLI_VERSION"
+      - run: go mod download all
       - run: spine verify --warnings-as-errors --json
       - run: spine build
       - run: spine contract probe --json
