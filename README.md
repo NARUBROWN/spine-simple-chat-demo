@@ -4,6 +4,16 @@
 
 WebSocket 서버에서는 연결 업그레이드, 인증, JSON 해석, 방 상태, 응답 전송과 종료 처리가 한 핸들러에 섞이기 쉽습니다. 이 예제는 **메시지를 해석하고 실행하는 공통 흐름을 Spine에 맡기고, 방의 규칙을 서비스에 모읍니다.** 방별 전송, 중복 이름 거부, 연결 종료 후 이름 재사용까지 실제 연결로 확인할 수 있습니다.
 
+## 예제 채널 선택
+
+| 채널 | 브랜치 | 용도 |
+| --- | --- | --- |
+| Preview | [`preview`](https://github.com/NARUBROWN/spine-simple-chat-demo/tree/preview) | 개발 중인 변경과 실험 버전을 확인합니다. |
+| RC | [`rc`](https://github.com/NARUBROWN/spine-simple-chat-demo/tree/rc) | 정식 공개 전 릴리스 후보를 확인합니다. |
+| Stable | [`main`](https://github.com/NARUBROWN/spine-simple-chat-demo/tree/main) | 정식 의존성을 사용하는 공개 예제이며 기본 브랜치입니다. |
+
+예제 코드는 `preview → rc → main` 순서로 승격합니다. 예제 태그는 `vX.Y.Z-preview.N`, `vX.Y.Z-rc.N`, `vX.Y.Z`로 구분하며, **GitHub Release는 Stable에서만 발행합니다.** 실제 Spine 버전은 선택한 브랜치의 `go.mod`를 확인하세요. [채널 검사와 발행 절차](RELEASE_CHANNELS.md)를 참고하세요.
+
 ## 코드에서 볼 부분
 
 ```text
