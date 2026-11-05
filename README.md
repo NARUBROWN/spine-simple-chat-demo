@@ -1,6 +1,6 @@
 # Spine WebSocket 채팅 예제
 
-인증된 클라이언트가 방에 참여하고 메시지를 주고받는 예제입니다. Spine `v0.6.5`와 CLI `v0.4.2`를 사용합니다.
+인증된 클라이언트가 방에 참여하고 메시지를 주고받는 예제입니다. Spine `v0.7.0-preview.1`과 CLI `v0.4.3-preview.2`를 사용합니다.
 
 WebSocket 서버에서는 연결 업그레이드, 인증, JSON 해석, 방 상태, 응답 전송과 종료 처리가 한 핸들러에 섞이기 쉽습니다. 이 예제는 **메시지를 해석하고 실행하는 공통 흐름을 Spine에 맡기고, 방의 규칙을 서비스에 모읍니다.** 방별 전송, 중복 이름 거부, 연결 종료 후 이름 재사용까지 실제 연결로 확인할 수 있습니다.
 
@@ -60,11 +60,11 @@ HTTP는 업그레이드 경로를, Gorilla는 프레임 입출력을 제공합�
 Go `1.25.5` 이상이 필요하며, 로컬 검증에는 Go `1.26.0`을 사용합니다. DB와 브로커는 필요하지 않습니다.
 
 ```sh
-go install github.com/NARUBROWN/spine-cli/cmd/spine@v0.4.2
-spine version
-# spine-cli 0.4.2
-go mod download
-spine dev
+go install github.com/NARUBROWN/spine-cli@v0.4.3-preview.2
+spine-cli version
+# spine-cli 0.4.3-preview.2
+go mod download all
+spine-cli dev
 ```
 
 코드를 수정하면 CLI가 다시 빌드하고 빌드 성공 후 서버를 교체합니다. 기본 주소는 `:8080`입니다. `CHAT_ADDRESS`를 생략하면 CLI가 전달하는 `SPINE_PORT`를 사용합니다.
@@ -76,7 +76,7 @@ wscat -c 'ws://localhost:8080/ws/chat?token=demo-token' \
   -H 'Origin: http://localhost:8080'
 ```
 
-실행 코어는 Spine `v0.6.5`, HTTP 플랫폼은 `spine-echo-platform v0.1.0`, WebSocket 플랫폼은 `spine-gorilla-platform v0.1.0`입니다. Echo는 `v5.4.4`입니다.
+실행 코어는 Spine `v0.7.0-preview.1`, HTTP 플랫폼은 `spine-echo-platform v0.2.0-preview.1`, WebSocket 플랫폼은 `spine-gorilla-platform v0.2.0-preview.1`입니다. Echo는 `v5.4.4`입니다.
 
 ## 방에 참여하고 메시지 보내기
 
@@ -131,7 +131,7 @@ wscat -c 'ws://localhost:8080/ws/chat?token=demo-token' \
 ```sh
 CHAT_AUTH_TOKEN='replace-me' \
 CHAT_ALLOWED_ORIGINS='https://chat.example.com,https://admin.example.com' \
-spine dev
+spine-cli dev
 ```
 
 운영 환경에서는 별도의 비밀 토큰과 TLS(`wss://`)를 사용하십시오. URL query 토큰은 브라우저 WebSocket API를 위한 데모 방식이며 접근 로그에 남을 수 있습니다. 헤더를 설정할 수 있는 클라이언트는 `Authorization: Bearer <token>`을 사용합니다. Bearer가 있으면 query 토큰보다 우선합니다. 공용 데모 토큰과 표시 이름은 사용자별 인증이나 방 접근 권한을 제공하지 않습니다.
@@ -141,11 +141,11 @@ spine dev
 ## 검증하기
 
 ```sh
-spine context --root . --json
-spine contract check --root . --warnings-as-errors --json
-spine verify --root . --warnings-as-errors --json
-spine build --root .
-spine contract probe --root . --json
+spine-cli context --root . --json
+spine-cli contract check --root . --warnings-as-errors --json
+spine-cli verify --root . --warnings-as-errors --json
+spine-cli build --root .
+spine-cli contract probe --root . --json
 go test -race -count=1 ./...
 go test -race -count=1 -tags=e2e -v ./e2e
 ```
@@ -167,14 +167,14 @@ go test -count=1 -tags=e2e -v ./e2e
 
 ## CLI로 확장하기
 
-현재 선택은 `spine.toml`의 `platform = "echo"`, `websocket_platform = "gorilla"`, `recipe = "platform-contracts-v0.6.5"`에 기록되어 있습니다. 같은 출발점은 `spine new chat-demo --module example.com/chat --websocket-platform gorilla`로 만들 수 있습니다.
+현재 선택은 `spine.toml`의 `platform = "echo"`, `websocket_platform = "gorilla"`, `recipe = "platform-contracts-v0.7.0-preview.1"`에 기록되어 있습니다. 같은 출발점은 `spine-cli new chat-demo --module example.com/chat --websocket-platform gorilla`로 만들 수 있습니다.
 
 추가 소켓의 생성 계획은 다음 명령으로 확인합니다.
 
 ```sh
-spine g websocket notice --path /ws/notice --field message:string --dry-run --json
+spine-cli g websocket notice --path /ws/notice --field message:string --dry-run --json
 ```
 
 `changes`, `diff`, `base_hash`를 검토하고 같은 명령의 `--dry-run`을 `--if-match <base_hash>`로 바꿔 적용합니다. 생성된 핸들러의 메시지 처리 로직은 직접 구현합니다.
 
-의존성 갱신은 `spine update --dry-run --json`으로 검토하고 `--if-match`로 적용합니다. 기존 앱에 플랫폼 선택이나 서비스 분리를 자동으로 추가하지는 않습니다. 전체 명령과 분석 한계는 [Spine CLI 문서](https://github.com/NARUBROWN/spine-cli#readme)를 참고하세요.
+의존성 갱신은 `spine-cli update --dry-run --json`으로 검토하고 `--if-match`로 적용합니다. 기존 앱에 플랫폼 선택이나 서비스 분리를 자동으로 추가하지는 않습니다. 전체 명령과 분석 한계는 [Spine CLI 문서](https://github.com/NARUBROWN/spine-cli#readme)를 참고하세요.

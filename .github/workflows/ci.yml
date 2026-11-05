@@ -28,10 +28,10 @@ jobs:
       - name: Install pinned Spine CLI
         env:
           CLI_VERSION: ${{ steps.channel.outputs.cli_version }}
-        run: go install "github.com/NARUBROWN/spine-cli/cmd/spine@$CLI_VERSION"
+        run: go install "github.com/NARUBROWN/spine-cli@$CLI_VERSION"
       - run: go mod download all
-      - run: spine verify --warnings-as-errors --json
-      - run: spine build
-      - run: spine contract probe --json
+      - run: spine-cli verify --warnings-as-errors --json
+      - run: spine-cli build
+      - run: spine-cli contract probe --json
       - run: go test -race -count=1 ./...
       - run: go test -race -count=1 -tags=e2e -v ./e2e
