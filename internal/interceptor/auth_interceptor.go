@@ -2,8 +2,9 @@ package interceptor
 
 import (
 	"crypto/subtle"
-	"github.com/NARUBROWN/spine-simple-chat-demo/internal/config"
 	"strings"
+
+	"github.com/NARUBROWN/spine-simple-chat-demo/internal/config"
 
 	"github.com/NARUBROWN/spine/core"
 	"github.com/NARUBROWN/spine/pkg/httperr"
@@ -12,10 +13,6 @@ import (
 
 type AuthInterceptor struct {
 	token string
-}
-
-func NewAuthInterceptor(token string) *AuthInterceptor {
-	return &AuthInterceptor{token: token}
 }
 
 func (i *AuthInterceptor) PreHandshake(ctx spinectx.Ctx, _ core.HandlerMeta) error {
@@ -40,10 +37,10 @@ func (*AuthInterceptor) BeforeResponse(spinectx.Ctx, core.HandlerMeta, error) er
 }
 func (*AuthInterceptor) AfterCompletion(spinectx.Ctx, core.HandlerMeta, error) {}
 
-func NewConfiguredAuthInterceptor() *AuthInterceptor {
+func (*AuthInterceptor) Constructor() *AuthInterceptor {
 	cfg, err := config.Load()
 	if err != nil {
 		panic(err)
 	}
-	return NewAuthInterceptor(cfg.AuthToken)
+	return &AuthInterceptor{token: cfg.AuthToken}
 }
