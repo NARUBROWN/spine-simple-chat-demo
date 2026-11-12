@@ -40,10 +40,10 @@ HTTP handshake → AuthInterceptor → Echo 업그레이드 + Gorilla 연결
 핸들러는 요청을 다음 시그니처로 받습니다.
 
 ```go
-func (c *ChatSocket) Handle(ctx context.Context, connID ws.ConnectionID, command dto.ChatMessage) error
+func (c *ChatSocket) Handle(ctx spinectx.Ctx, connID ws.ConnectionID, command dto.ChatMessage) error
 ```
 
-Spine이 `context.Context`, 연결 ID와 JSON DTO를 해석하고, 생성자로 등록한 `RoomService`를 핸들러에 주입합니다. 핸들러에는 업그레이더나 읽기 루프가 없습니다. `RoomService`도 Spine, Echo, Gorilla를 import하지 않으며, 이벤트를 전달하는 함수만 받습니다. 따라서 방 규칙은 소켓 없이 테스트할 수 있습니다.
+`spinectx`는 `github.com/NARUBROWN/spine/pkg/spine`의 별칭입니다. Spine이 `spinectx.Ctx`, 연결 ID와 JSON DTO를 해석하고, 생성자로 등록한 `RoomService`를 핸들러에 주입합니다. 핸들러는 `ctx.ExecutionContext().Context()`로 표준 컨텍스트를 꺼내 서비스와 `ws.Send`에 전달합니다. 핸들러에는 업그레이더나 읽기 루프가 없습니다. `RoomService`도 Spine, Echo, Gorilla를 import하지 않으며, 이벤트를 전달하는 함수만 받습니다. 따라서 방 규칙은 소켓 없이 테스트할 수 있습니다.
 
 `BuildApplication`은 구현과 정책을 명시적으로 연결합니다.
 
