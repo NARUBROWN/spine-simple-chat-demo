@@ -20,7 +20,8 @@ func BuildApplication() (spine.App, boot.Options, error) {
 	if err != nil {
 		return nil, boot.Options{}, err
 	}
-	app.InterceptorFor(boot.InterceptorWebSocket, interceptor.NewAuthInterceptor(cfg.AuthToken))
+	app.Constructor(interceptor.NewConfiguredAuthInterceptor)
+	app.InterceptorFor(boot.InterceptorWebSocket, (*interceptor.AuthInterceptor)(nil))
 	if err := chat.Register(app); err != nil {
 		return nil, boot.Options{}, err
 	}
