@@ -1,11 +1,11 @@
 package chat
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/NARUBROWN/spine-simple-chat-demo/src/dto"
 	"github.com/NARUBROWN/spine-simple-chat-demo/src/service"
+	spinectx "github.com/NARUBROWN/spine/pkg/spine"
 	"github.com/NARUBROWN/spine/pkg/ws"
 )
 
@@ -14,12 +14,13 @@ type ChatSocket struct{ rooms *service.RoomService }
 
 func NewChatSocket(rooms *service.RoomService) *ChatSocket { return &ChatSocket{rooms: rooms} }
 
-func (c *ChatSocket) Handle(ctx context.Context, connID ws.ConnectionID, command dto.ChatMessage) error {
-	return c.rooms.Handle(ctx, connID.Value, func(event dto.ChatEvent) error {
+func (c *ChatSocket) Handle(ctx spinectx.Ctx, connID ws.ConnectionID, command dto.ChatMessage) error {
+	executionCtx := ctx.ExecutionContext().Context()
+	return c.rooms.Handle(executionCtx, connID.Value, func(event dto.ChatEvent) error {
 		data, err := json.Marshal(event)
 		if err != nil {
 			return err
 		}
-		return ws.Send(ctx, ws.TextMessage, data)
+		return ws.Send(executionCtx, ws.TextMessage, data)
 	}, command)
 }
