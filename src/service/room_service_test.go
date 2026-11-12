@@ -32,7 +32,7 @@ func (s *recordingSender) last(t *testing.T) dto.ChatEvent {
 }
 
 func TestRoomServiceRoomProtocol(t *testing.T) {
-	controller := NewRoomService()
+	controller := (&RoomService{}).Constructor()
 	alice := &recordingSender{}
 	bob := &recordingSender{}
 	other := &recordingSender{}
@@ -62,7 +62,7 @@ func TestRoomServiceRoomProtocol(t *testing.T) {
 }
 
 func TestRoomServiceRejectsInvalidState(t *testing.T) {
-	controller := NewRoomService()
+	controller := (&RoomService{}).Constructor()
 	first := &recordingSender{}
 	second := &recordingSender{}
 
@@ -81,7 +81,7 @@ func TestRoomServiceRejectsInvalidState(t *testing.T) {
 }
 
 func TestDisconnectRemovesMembershipAndAllowsNameReuse(t *testing.T) {
-	controller := NewRoomService()
+	controller := (&RoomService{}).Constructor()
 	sender := &recordingSender{}
 	connectionCtx, cancel := context.WithCancel(context.Background())
 	ctx := connectionCtx
@@ -112,7 +112,7 @@ func TestDisconnectRemovesMembershipAndAllowsNameReuse(t *testing.T) {
 }
 
 func TestStaleCleanupDoesNotRemoveNewMembership(t *testing.T) {
-	controller := NewRoomService()
+	controller := (&RoomService{}).Constructor()
 	sender := &recordingSender{}
 	sendCommand(t, controller, "same", sender, dto.ChatMessage{Type: "join", Room: "first", User: "alice"})
 	controller.mu.RLock()

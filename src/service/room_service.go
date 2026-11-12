@@ -33,7 +33,7 @@ type client struct {
 	stopCleanup func() bool
 }
 
-func NewRoomService() *RoomService {
+func (*RoomService) Constructor() *RoomService {
 	return &RoomService{clients: make(map[string]client)}
 }
 

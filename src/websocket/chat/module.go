@@ -1,12 +1,10 @@
 package chat
 
-import "github.com/NARUBROWN/spine"
+import (
+	"github.com/NARUBROWN/spine"
+)
 
-// Register는 생성자와 메시지 수신 계약을 애플리케이션에 등록합니다.
+// Register는 WebSocket 경로와 채팅 수신 메서드를 연결합니다.
 func Register(app spine.App) error {
-	app.Constructor(NewChatSocket)
-	if err := app.WebSocket().Register("/ws/chat", (*ChatSocket).Handle); err != nil {
-		return err
-	}
-	return nil
+	return app.WebSocket().Register("/ws/chat", (*ChatSocket).Handle)
 }
