@@ -12,7 +12,9 @@ import (
 // ChatSocket는 Spine이 해석한 입력과 연결을 방 서비스에 전달합니다.
 type ChatSocket struct{ rooms *service.RoomService }
 
-func NewChatSocket(rooms *service.RoomService) *ChatSocket { return &ChatSocket{rooms: rooms} }
+func (*ChatSocket) Constructor(rooms *service.RoomService) *ChatSocket {
+	return &ChatSocket{rooms: rooms}
+}
 
 func (c *ChatSocket) Handle(ctx spinectx.Ctx, connID ws.ConnectionID, command dto.ChatMessage) error {
 	executionCtx := ctx.ExecutionContext().Context()

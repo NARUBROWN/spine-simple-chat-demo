@@ -30,7 +30,8 @@ HTTP handshake → AuthInterceptor → Echo 업그레이드 + Gorilla 연결
 
 | 책임 | 코드 |
 |---|---|
-| HTTP와 WebSocket 구현 선택, 생성자, 인터셉터 등록 | [BuildApplication](internal/application/application.go) |
+| HTTP와 WebSocket 구현 선택, 서비스와 인터셉터 등록 | [BuildApplication](internal/application/application.go) |
+| WebSocket 수신 객체와 경로 등록 | [채팅 등록 모듈](src/websocket/chat/module.go) |
 | 업그레이드 전 토큰 검사 | [AuthInterceptor](internal/interceptor/auth_interceptor.go) |
 | JSON 입력과 출력의 형태 | [ChatMessage / ChatEvent](src/dto/chat_message.go) |
 | 해석된 입력과 연결을 서비스에 전달 | [ChatSocket](src/websocket/chat/chat_handler.go) |
@@ -49,10 +50,26 @@ func (c *ChatSocket) Handle(ctx spinectx.Ctx, connID ws.ConnectionID, command dt
 
 ```go
 app := spine.New(echoplatform.Option(), gorillaplatform.Option())
-app.Constructor(service.NewRoomService)
-app.Constructor(interceptor.NewConfiguredAuthInterceptor)
+app.Constructor(
+    constructor.Service(&service.RoomService{}),
+    constructor.Custom(&chat.ChatSocket{}),
+    constructor.Interceptor(&interceptor.AuthInterceptor{}),
+)
 app.InterceptorFor(boot.InterceptorWebSocket, (*interceptor.AuthInterceptor)(nil))
+if err := chat.Register(app); err != nil {
+    return nil, boot.Options{}, err
+}
 ```
+
+`constructor`는 `github.com/NARUBROWN/spine/pkg/constructor`입니다. 컴포넌트는 `Constructor(의존성...) *자기타입` 메서드를 구현합니다. 생성자는 앱 조립부에서 등록하고, 별도 `src/websocket/chat/module.go`는 경로와 수신 메서드만 연결합니다.
+
+```go
+func Register(app spine.App) error {
+    return app.WebSocket().Register("/ws/chat", (*ChatSocket).Handle)
+}
+```
+
+웹소켓 수신 객체에는 전용 역할이 없어 `constructor.Custom(&ChatSocket{})`을 사용합니다. 앱 조립부는 서비스, 인터셉터, 수신 객체의 생성자를 등록하고 `chat.Register(app)`으로 웹소켓 등록을 연결합니다.
 
 HTTP는 업그레이드 경로를, Gorilla는 프레임 입출력을 제공합니다. Spine은 인자 해석, 인터셉터 실행, 연결 제한과 종료 흐름을 관리합니다. 인증 기준과 채팅 규칙은 애플리케이션이 정합니다.
 
