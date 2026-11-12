@@ -31,7 +31,7 @@ HTTP handshake → AuthInterceptor → Echo 업그레이드 + Gorilla 연결
 | 책임 | 코드 |
 |---|---|
 | HTTP와 WebSocket 구현 선택, 서비스와 인터셉터 등록 | [BuildApplication](internal/application/application.go) |
-| WebSocket 수신 객체와 경로 등록 | [채팅 등록 모듈](src/websocket/chat/module.go) |
+| WebSocket 수신 객체와 경로 등록 | [채팅 핸들러](src/websocket/chat/chat_handler.go) |
 | 업그레이드 전 토큰 검사 | [AuthInterceptor](internal/interceptor/auth_interceptor.go) |
 | JSON 입력과 출력의 형태 | [ChatMessage / ChatEvent](src/dto/chat_message.go) |
 | 해석된 입력과 연결을 서비스에 전달 | [ChatSocket](src/websocket/chat/chat_handler.go) |
@@ -61,7 +61,7 @@ if err := chat.Register(app); err != nil {
 }
 ```
 
-`constructor`는 `github.com/NARUBROWN/spine/pkg/constructor`입니다. 컴포넌트는 `Constructor(의존성...) *자기타입` 메서드를 구현합니다. 생성자는 앱 조립부에서 등록하고, 별도 `src/websocket/chat/module.go`는 경로와 수신 메서드만 연결합니다.
+`constructor`는 `github.com/NARUBROWN/spine/pkg/constructor`입니다. 컴포넌트는 `Constructor(의존성...) *자기타입` 메서드를 구현합니다. 생성자는 앱 조립부에서 등록하고, `src/websocket/chat/chat_handler.go`에 수신 객체와 경로 연결 함수 `Register`를 함께 둡니다.
 
 ```go
 func Register(app spine.App) error {
