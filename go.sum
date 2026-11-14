@@ -1,9 +1,9 @@
-github.com/NARUBROWN/spine v0.7.5 h1:/zIEVanDiU5aBf+7378l6sE/9KxROibcTLRm3M+r7Mg=
-github.com/NARUBROWN/spine v0.7.5/go.mod h1:ieBb5zN8fi7NastxyIyNGKHVanRa15XQ8CROJdciXPE=
-github.com/NARUBROWN/spine-echo-platform v0.2.1 h1:ft83SGAWzD8gn0uCr5ozu9QnYT9UqBYTbKkEeQqCC2Y=
-github.com/NARUBROWN/spine-echo-platform v0.2.1/go.mod h1:WxkfcPhOF9JxrRMk2zUScVIe7//T5iUyUTZG+kk7oqU=
-github.com/NARUBROWN/spine-gorilla-platform v0.2.0 h1:sNpWr7v8QcMvGy5chsE8aIj9Ndo2wyk/6otbXDzMyas=
-github.com/NARUBROWN/spine-gorilla-platform v0.2.0/go.mod h1:QlMfNA9LsoNPt8nMSAw7s1uZ7YutZ5l/viGpwF9jK2g=
+github.com/NARUBROWN/spine v0.7.6-preview.1 h1:PSCaacXEMBctks1r9xwCkbUNDb8pj5ep/396U5RXsLs=
+github.com/NARUBROWN/spine v0.7.6-preview.1/go.mod h1:ieBb5zN8fi7NastxyIyNGKHVanRa15XQ8CROJdciXPE=
+github.com/NARUBROWN/spine-echo-platform v0.2.1-preview.1 h1:L1dntj/p/5CeXCjp2Kky4Y8Z7g06HBVWQ2/YAo0OSF4=
+github.com/NARUBROWN/spine-echo-platform v0.2.1-preview.1/go.mod h1:WxkfcPhOF9JxrRMk2zUScVIe7//T5iUyUTZG+kk7oqU=
+github.com/NARUBROWN/spine-gorilla-platform v0.2.0-preview.2 h1:LF2lSFsOh+1k1Q/GLdcFaEbEmfnjamRc4ks0k1WKLOI=
+github.com/NARUBROWN/spine-gorilla-platform v0.2.0-preview.2/go.mod h1:QlMfNA9LsoNPt8nMSAw7s1uZ7YutZ5l/viGpwF9jK2g=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
