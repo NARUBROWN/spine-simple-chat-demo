@@ -1,6 +1,6 @@
 # Spine WebSocket 채팅 예제
 
-인증된 클라이언트가 방에 참여하고 메시지를 주고받는 예제입니다. Spine `v0.7.5`와 CLI v0.4.4를 사용합니다.
+인증된 클라이언트가 방에 참여하고 메시지를 주고받는 예제입니다. Spine `v0.7.6-preview.1`와 CLI v0.4.5-preview.5를 사용합니다.
 
 WebSocket 서버에서는 연결 업그레이드, 인증, JSON 해석, 방 상태, 응답 전송과 종료 처리가 한 핸들러에 섞이기 쉽습니다. 이 예제는 **메시지를 해석하고 실행하는 공통 흐름을 Spine에 맡기고, 방의 규칙을 서비스에 모읍니다.** 방별 전송, 중복 이름 거부, 연결 종료 후 이름 재사용까지 실제 연결로 확인할 수 있습니다.
 
@@ -78,13 +78,13 @@ HTTP는 업그레이드 경로를, Gorilla는 프레임 입출력을 제공합�
 Go `1.25.5` 이상이 필요하며, 로컬 검증에는 Go `1.26.0`을 사용합니다. DB와 브로커는 필요하지 않습니다.
 
 ```sh
-go install github.com/NARUBROWN/spine-cli/cmd/spine@v0.4.4
+go install github.com/NARUBROWN/spine-cli/cmd/spine@v0.4.5-preview.5
 spine version
 go mod download all
 spine dev
 ```
 
-CLI는 정식 버전 `v0.4.4`를 설치합니다. CI 검증 버전도 `.github/example-channels.json`에 고정합니다.
+CLI는 Preview 버전 `v0.4.5-preview.5`를 설치합니다. CI 검증 버전도 `.github/example-channels.json`에 고정합니다.
 
 코드를 수정하면 CLI가 다시 빌드하고 빌드 성공 후 서버를 교체합니다. 기본 주소는 `:8080`입니다. `CHAT_ADDRESS`를 생략하면 CLI가 전달하는 `SPINE_PORT`를 사용합니다.
 
@@ -95,7 +95,7 @@ wscat -c 'ws://localhost:8080/ws/chat?token=demo-token' \
   -H 'Origin: http://localhost:8080'
 ```
 
-실행 코어는 Spine `v0.7.5`, HTTP 플랫폼은 `spine-echo-platform v0.2.1`, WebSocket 플랫폼은 `spine-gorilla-platform v0.2.0`입니다. Echo는 `v5.4.4`입니다.
+실행 코어는 Spine `v0.7.6-preview.1`, HTTP 플랫폼은 `spine-echo-platform v0.2.1-preview.1`, WebSocket 플랫폼은 `spine-gorilla-platform v0.2.0-preview.2`입니다. Echo는 `v5.4.4`입니다.
 
 ## 방에 참여하고 메시지 보내기
 
